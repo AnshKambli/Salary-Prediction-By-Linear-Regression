@@ -181,31 +181,46 @@ if mode == "📈 Experience → Salary (₹)":
         years_exp = st.number_input(
             "Years of Experience",
             min_value=0.0, max_value=50.0,
-            value=5.0, step=0.1, format="%.1f",
+            value=3.0, step=0.1, format="%.1f",
             label_visibility="collapsed",
         )
         st.slider("Slide to adjust", min_value=0.0, max_value=20.0,
                   value=float(years_exp), step=0.1, disabled=True, label_visibility="collapsed")
 
-        pred_inr, pred_lpa = predict_salary_inr(years_exp)
-        low_inr  = max(0, pred_inr - mae_inr)
-        high_inr = pred_inr + mae_inr
-        low_lpa  = max(0, pred_lpa - mae_lpa)
-        high_lpa = pred_lpa + mae_lpa
+        if years_exp == 0.0:
+            st.markdown(f"""<div class="result-box" style="background:linear-gradient(135deg,#1a1a0d,#2a2a0a);border:2px solid #f0c040;border-radius:16px;padding:28px 32px;text-align:center;margin-top:12px;">
+                <div class="result-label">⚠️ No Experience Entered</div>
+                <div style="color:#f0c040;font-size:22px;font-weight:700;margin:12px 0;">Enter experience > 0</div>
+                <div style="color:#a8b2d8;font-size:13px;">The model predicts salary based on<br>actual years of professional experience.</div>
+                <div style="color:#8892b0;font-size:12px;margin-top:10px;">Dataset range: <b>1.2 – 10.6 years</b></div>
+            </div>""", unsafe_allow_html=True)
+            highlight_x, highlight_y_inr = 0.0, 0.0
+            point_color = "#64ffda"
+        else:
+            pred_inr, pred_lpa = predict_salary_inr(years_exp)
+            low_inr  = max(0, pred_inr - mae_inr)
+            high_inr = pred_inr + mae_inr
+            low_lpa  = max(0, pred_lpa - mae_lpa)
+            high_lpa = pred_lpa + mae_lpa
 
-        st.markdown(f"""<div class="result-box result-box-salary">
-            <div class="result-label">Predicted Annual Salary</div>
-            <div class="result-value-teal">{pred_lpa:.2f} LPA</div>
-            <div class="result-lpa">{fmt_inr(pred_inr)} / year</div>
-            <div class="result-range">± {mae_lpa:.2f} LPA confidence (MAE)</div>
-            <div class="result-range">Range: <b>{low_lpa:.2f}</b> – <b>{high_lpa:.2f} LPA</b></div>
-        </div>""", unsafe_allow_html=True)
+            # Warn if outside training range
+            if years_exp < 1.2 or years_exp > 10.6:
+                st.warning(f"⚠️ {years_exp:.1f} yrs is outside the training range (1.2–10.6 yrs). Prediction is an extrapolation.")
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.info(f"**{years_exp:.1f} yrs experience** → **{pred_lpa:.2f} LPA** ({fmt_inr(pred_inr)})")
+            st.markdown(f"""<div class="result-box result-box-salary">
+                <div class="result-label">Predicted Annual Salary</div>
+                <div class="result-value-teal">{pred_lpa:.2f} LPA</div>
+                <div class="result-lpa">{fmt_inr(pred_inr)} / year</div>
+                <div class="result-range">± {mae_lpa:.2f} LPA confidence (MAE)</div>
+                <div class="result-range">Range: <b>{low_lpa:.2f}</b> – <b>{high_lpa:.2f} LPA</b></div>
+            </div>""", unsafe_allow_html=True)
 
-    highlight_x, highlight_y_inr = years_exp, pred_inr
-    point_color = "#64ffda"
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.info(f"**{years_exp:.1f} yrs experience** → **{pred_lpa:.2f} LPA** ({fmt_inr(pred_inr)})")
+
+        if years_exp > 0.0:
+            highlight_x, highlight_y_inr = years_exp, pred_inr
+        point_color = "#64ffda"
 
 # ── Mode B: Salary → Experience ───────────────────────────────────────────────
 else:
